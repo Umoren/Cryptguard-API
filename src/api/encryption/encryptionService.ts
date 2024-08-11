@@ -45,18 +45,25 @@ async function downloadFile(url: string, outputPath: string): Promise<void> {
   });
 }
 
-export async function encryptVideo(videoUrl: string, contentId: string): Promise<ServiceResponse<{ mpdUrl: string }>> {
+export async function encryptVideo(
+  videoUrl: string,
+  contentId: string,
+): Promise<ServiceResponse<{ baseUrl: string; mpdFile: string }>> {
   const tempFilePath = path.join(cdnPath, `temp_${contentId}.mp4`);
+  const contentDir = path.join(cdnPath, contentId);
 
   try {
+    // Create a directory for this content
+    fs.mkdirSync(contentDir, { recursive: true });
+
     logger.info(`Downloading video for ${contentId}`);
     await downloadFile(videoUrl, tempFilePath);
     logger.info(`Download completed for ${contentId}`);
 
     return new Promise((resolve) => {
       const args = [
-        `in=${tempFilePath},stream=audio,output=${cdnPath}/audio_${contentId}.mp4`,
-        `in=${tempFilePath},stream=video,output=${cdnPath}/video_${contentId}.mp4`,
+        `in=${tempFilePath},stream=audio,output=${contentDir}/audio.mp4`,
+        `in=${tempFilePath},stream=video,output=${contentDir}/video.mp4`,
         "--enable_widevine_encryption",
         "--key_server_url",
         "https://license.uat.widevine.com/cenc/getcontentkey/widevine_test",
@@ -69,7 +76,7 @@ export async function encryptVideo(videoUrl: string, contentId: string): Promise
         "--aes_signing_iv",
         env.AES_SIGNING_IV,
         "--mpd_output",
-        `${cdnPath}/${contentId}.mpd`,
+        `${contentDir}/manifest.mpd`,
       ];
 
       logger.info(`Starting encryption process for ${contentId}`);
@@ -95,7 +102,7 @@ export async function encryptVideo(videoUrl: string, contentId: string): Promise
         resolve(
           ServiceResponse.failure(
             "Video encryption failed due to process error",
-            { mpdUrl: "" },
+            { baseUrl: "", mpdFile: "" },
             StatusCodes.INTERNAL_SERVER_ERROR,
           ),
         );
@@ -110,7 +117,10 @@ export async function encryptVideo(videoUrl: string, contentId: string): Promise
           resolve(
             ServiceResponse.success(
               "Video encrypted successfully",
-              { mpdUrl: `${env.CDN_URL}/${contentId}.mpd` },
+              {
+                baseUrl: `${env.CDN_URL}/${contentId}/`,
+                mpdFile: "manifest.mpd",
+              },
               StatusCodes.OK,
             ),
           );
@@ -119,13 +129,21 @@ export async function encryptVideo(videoUrl: string, contentId: string): Promise
           logger.error(`stdout: ${stdout}`);
           logger.error(`stderr: ${stderr}`);
           resolve(
-            ServiceResponse.failure("Video encryption failed", { mpdUrl: "" }, StatusCodes.INTERNAL_SERVER_ERROR),
+            ServiceResponse.failure(
+              "Video encryption failed",
+              { baseUrl: "", mpdFile: "" },
+              StatusCodes.INTERNAL_SERVER_ERROR,
+            ),
           );
         }
       });
     });
   } catch (error) {
     logger.error(`Error during video processing: ${error instanceof Error ? error.message : String(error)}`);
-    return ServiceResponse.failure("Video processing failed", { mpdUrl: "" }, StatusCodes.INTERNAL_SERVER_ERROR);
+    return ServiceResponse.failure(
+      "Video processing failed",
+      { baseUrl: "", mpdFile: "" },
+      StatusCodes.INTERNAL_SERVER_ERROR,
+    );
   }
 }

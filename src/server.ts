@@ -27,18 +27,18 @@ app.use(rateLimiter);
 // Request logging
 app.use(requestLogger);
 
+// Serve encrypted files
+const cdnPath = path.resolve(__dirname, "..", "cdn");
+app.use("/cdn", express.static(cdnPath));
+
 // Routes
 app.use("/health-check", healthCheckRouter);
 app.use("/encryption", encryptionRouter);
 
 // Swagger UI
-app.use(openAPIRouter);
+app.use("/api-docs", openAPIRouter);
 
 // Error handlers
 app.use(errorHandler());
-
-// Serve encrypted files
-const cdnPath = path.join(__dirname, "..", "cdn");
-app.use("/cdn", express.static(cdnPath));
 
 export { app, logger };

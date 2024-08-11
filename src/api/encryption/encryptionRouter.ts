@@ -16,7 +16,8 @@ const EncryptionRequestSchema = z.object({
 });
 
 const EncryptionResponseSchema = z.object({
-  mpdUrl: z.string().url(),
+  baseUrl: z.string().url(),
+  mpdFile: z.string(),
 });
 
 encryptionRegistry.registerPath({
