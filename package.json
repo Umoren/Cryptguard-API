@@ -1,9 +1,9 @@
 {
-  "name": "express-typescript-boilerplate",
+  "name": "cryptshield-server",
   "version": "1.0.14",
-  "description": "An Express boilerplate backend",
-  "author": "Edwin Hernandez",
-  "repository": "edwinhern/express-typescript-2024",
+  "description": "An API that encrypt videos and generates manifests",
+  "author": "Samuel Umoren",
+  "repository": ".",
   "license": "MIT",
   "main": "index.ts",
   "private": true,
@@ -16,10 +16,12 @@
     "lint:fix": "biome check src/ --fix",
     "format": "biome format src/",
     "test": "vitest run",
-    "prepare": "husky"
+    "prepare": "husky",
+    "install-packager": "node scripts/install-shaka-packager.js"
   },
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "^7.0.0",
+    "axios": "^1.7.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "envalid": "^8.0.0",

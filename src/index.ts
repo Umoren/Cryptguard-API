@@ -2,18 +2,33 @@ import { env } from "@/common/utils/envConfig";
 import { app, logger } from "@/server";
 
 const server = app.listen(env.PORT, () => {
-  const { NODE_ENV, HOST, PORT } = env;
-  logger.info(`Server (${NODE_ENV}) running on port http://${HOST}:${PORT}`);
+  logger.info(`Server (${env.NODE_ENV}) running on port http://${env.HOST}:${env.PORT}`);
 });
 
 const onCloseSignal = () => {
   logger.info("sigint received, shutting down");
   server.close(() => {
     logger.info("server closed");
-    process.exit();
+    process.exit(0);
   });
-  setTimeout(() => process.exit(1), 10000).unref(); // Force shutdown after 10s
+  // Force shutdown after 10s
+  setTimeout(() => {
+    logger.error("Forced shutdown after timeout");
+    process.exit(1);
+  }, 10000).unref();
 };
 
 process.on("SIGINT", onCloseSignal);
 process.on("SIGTERM", onCloseSignal);
+
+// Handle uncaught exceptions
+process.on("uncaughtException", (error) => {
+  logger.error("Uncaught Exception:", error);
+  onCloseSignal();
+});
+
+// Handle unhandled promise rejections
+process.on("unhandledRejection", (reason, promise) => {
+  logger.error("Unhandled Rejection at:", promise, "reason:", reason);
+  onCloseSignal();
+});
